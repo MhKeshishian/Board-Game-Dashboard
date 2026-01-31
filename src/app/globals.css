@@ -21,6 +21,27 @@
   flex: 1;
   background-color: lightgreen;
   padding: 16px;
+  overflow: auto;
+}
+
+.dash-widget {
+  background-color: white;
+  border: 1px solid #999;
+  position: relative;
+}
+
+.dash-remove {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dash-name {
+  padding: 10px;
+  text-align: center;
 }
 
 .notes-area {
@@ -33,4 +54,10 @@
   background-color: white;
   padding: 8px;
   margin-bottom: 8px;
+  user-select: none;
+  cursor: grab;
+}
+
+.widget-item:active {
+    cursor: grabbing;
 }
