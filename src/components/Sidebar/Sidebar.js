@@ -1,3 +1,5 @@
+"use client";
+
 import WidgetItem from "./WidgetItem";
 
 export default function Sidebar() {
