@@ -1,0 +1,23 @@
+.dashboard-new {
+  padding: 20px;
+  min-height: 100vh;
+  background-color: white;
+}
+
+.layout {
+  background-color: white;
+  background-image: 
+    linear-gradient(to right, lightblue 1px, transparent 1px),
+    linear-gradient(to bottom, lightblue 1px, transparent 1px);
+  background-size: 100px 30px;
+  min-height: 600px;
+}
+
+.react-grid-item {
+  display: flex;
+}
+
+.react-grid-item > div {
+  width: 100%;
+  height: 100%;
+}
