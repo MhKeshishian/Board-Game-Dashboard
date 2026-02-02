@@ -17,12 +17,12 @@
   gap: 5px;
 }
 
-.dashboard-area {
+/*.app-layout {
   flex: 1;
   background-color: lightgreen;
   padding: 16px;
   overflow: auto;
-}
+}*/
 
 .dash-widget {
   background-color: white;
