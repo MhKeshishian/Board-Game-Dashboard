@@ -2,6 +2,7 @@
 
 import { useState } from "react" 
 import "./signup.css"
+import Link from 'next/link'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -85,6 +86,9 @@ export default function SignupPage() {
 
           <button type="submit" className="signup-button">Sign up</button>
         </form>
+        <p className='login-link'>
+          Already a member? <Link href="/login">Login here</Link>
+        </p>
       </div>
     </div>
   )

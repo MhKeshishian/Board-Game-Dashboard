@@ -74,6 +74,23 @@ html, body {
   background-color: #45a049;
 }
 
+.login-link {
+  text-align: center;
+  margin-top: 20px;
+  color: whitesmoke;
+  font-size: 14px;
+}
+
+.login-link a {
+  color: #4CAF50;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+}
+
 .error-message {
     color: red;
 }

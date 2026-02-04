@@ -4,6 +4,7 @@
 the intention is to implement Oauth to make our logins secure */
 
 import { useState } from 'react'
+import Link from 'next/link'
 import './login.css'
 
 export default function LoginPage() {
@@ -68,6 +69,9 @@ export default function LoginPage() {
 
         <button type="submit" className='login-button'>Login</button>
       </form>
+      <p className='signup-link'>
+        Not a member? <Link href="/signup">Join here</Link>
+      </p>
     </div>
   </div>
   )
