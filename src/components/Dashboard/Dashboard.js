@@ -9,15 +9,16 @@ export default class Dashboard extends React.PureComponent {
     rowHeight: 100,
     isDraggable: true,
     isResizable: true,
-    width: 2000
+    width: 2000,
+    activePage: 0
   };
 
   constructor(props) {
     super(props);
 
     this.state = {
-      items: [],
-      newCounter: 0
+      itemsByPage: [[], [], [], [], [], [], []],
+      counterByPage: [0, 0, 0, 0, 0, 0, 0]
     };
 
     this.handleDrop = this.handleDrop.bind(this);
@@ -32,26 +33,36 @@ export default class Dashboard extends React.PureComponent {
   handleDrop(e) {
     e.preventDefault();
 
+    const pageIndex = this.props.activePage;
     const widgetName = e.dataTransfer.getData("text/plain");
-    const newId = "n" + this.state.newCounter;
 
-    this.setState({
-      items: this.state.items.concat({
-        i: newId,
-        x: (this.state.items.length * 2) % this.props.cols,
-        y: Infinity,
-        w: 1,
-        h: 1,
-        widgetName: widgetName
-      }),
-      newCounter: this.state.newCounter + 1
-    });
+    const itemsCopy = [...this.state.itemsByPage];
+    const counterCopy = [...this.state.counterByPage];
+
+    const newId = "n" + counterCopy[pageIndex];
+
+    const newItem = {
+      i: newId,
+      x: (itemsCopy[pageIndex].length * 2) % this.props.cols,
+      y: Infinity,
+      w: 1,
+      h: 1,
+      widgetName: widgetName
+    };
+
+    itemsCopy[pageIndex] = itemsCopy[pageIndex].concat(newItem);
+    counterCopy[pageIndex] = counterCopy[pageIndex] + 1;
+
+    this.setState({ itemsByPage: itemsCopy, counterByPage: counterCopy });
   }
 
   onRemoveItem(id) {
-    this.setState({
-      items: this.state.items.filter((x) => x.i !== id)
-    });
+    const pageIndex = this.props.activePage;
+
+    const itemsCopy = [...this.state.itemsByPage];
+    itemsCopy[pageIndex] = itemsCopy[pageIndex].filter((x) => x.i !== id);
+
+    this.setState({ itemsByPage: itemsCopy });
   }
 
   onLayoutChange(layout) {
@@ -59,9 +70,12 @@ export default class Dashboard extends React.PureComponent {
   }
 
   generateDOM() {
-    return this.state.items.map((el) =>
+    const pageIndex = this.props.activePage;
+    const items = this.state.itemsByPage[pageIndex];
+
+    return items.map((el) =>
       <div key={el.i} data-grid={el} className="dash-widget">
-        <button className="dash-remove" onClick={() => this.onRemoveItem(el.i)}>x</button>
+        <button type="button" className="dash-remove" onClick={() => this.onRemoveItem(el.i)}>x</button>
         <div className="dash-name">{el.widgetName}</div>
       </div>
     );
