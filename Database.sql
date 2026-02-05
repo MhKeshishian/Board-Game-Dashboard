@@ -4,9 +4,9 @@
 -- AUTHOR:      Kalina Cathcart
 -- DATE:        2026-01-29
 -- DESCRIPTION:
---              This database schema defines the backend data model for the StratPad application.
+--              This PostgreSQL database schema defines the backend data model for the StratPad application.
 --              The design uses a HYBRID APPROACH:
---                  • Relational tables for users, campaigns, permissions, and interactions (votes, subscriptions, reports).
+--                  • Relational tables for users,, permissions, and interactions (votes, subscriptions, reports).
 --                  • JSONB document storage for dashboard layouts and modules
 
 
@@ -25,12 +25,14 @@ CREATE TABLE Users (
     last_name VARCHAR(100) NOT NULL,                          -- User's last name, required field
     email VARCHAR(250) UNIQUE NOT NULL,                       -- Login email address, must be unique, required for authentication
     password_hash VARCHAR(255) NOT NULL,                      -- Hashed password using bcrypt/argon2, never store plaintext
+ 
 
     -- Account Metadata
-    is_active BOOLEAN DEFAULT TRUE,                           -- Account active status, false = soft delete/disabled account
-    gm_flag BOOLEAN DEFAULT FALSE,                            -- True if user can create/run campaigns as Game Master
+    is_active BOOLEAN DEFAULT TRUE,                           -- Account active status, false = soft delete/disabled account                        
     dashboard_limit INT DEFAULT 10,                           -- Maximum number of dashboards user can create
-    dashboard_count INT DEFAULT 0                             -- Current number of dashboards owned by user
+    dashboard_count INT DEFAULT 0,                             -- Current number of dashboards owned by user
+    role VARCHAR(50) DEFAULT 'user',                          -- User role: user, moderator, admin
+    
 
     -- Profile Data
     bio VARCHAR(1000),                                        -- Short user biography/description
@@ -38,7 +40,7 @@ CREATE TABLE Users (
     location VARCHAR(150),                                    -- User's general location (city/region)
     timezone VARCHAR(50),                                     -- User's timezone 
     language_choice VARCHAR(10) DEFAULT 'en',                 -- Preferred UI language (ISO code), default = English
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,         -- Timestamp when the account was created, auto-set on insert
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,         -- Timestamp of last profile update, should be updated on changes
@@ -48,138 +50,16 @@ CREATE TABLE Users (
 
 
 
--- TABLE: Campaigns
--- PRIMARY KEY: id
--- FOREIGN KEYS: gm_user_id for Users(id)
--- PURPOSE: Represents a single game for which many sessions will be played under. 
--- A campaign is owned by a single Game Master (GM) user. Players join campaigns via invite codes or public access.
--- Campaigns store metadata about the game world, setting, tone, and difficulty. Campaigns can be active or archived/completed. 
--- Campaigns have many members (users) via CampaignMembers junction table. Campaigns have many sessions (play sessions) via Sessions table.
--- Campaigns can have many dashboards created within them by members. Dashboards created in a campaign are owned by individual users.
-CREATE TABLE Campaigns (
-
-    id SERIAL PRIMARY KEY,                                    -- Auto-incrementing integer, uniquely identifies each campaign
-
-    -- Core campaign info
-    title VARCHAR(250) NOT NULL,                              -- Campaign name/title, required field
-    description VARCHAR(2500),                                -- Campaign summary/description
-
-    -- Ownership
-    gm_user_id INT NOT NULL,                                  -- Foreign key to Users, identifies the Game Master who owns this campaign
-
-    -- Campaign Metadata
-    game_system VARCHAR(100),                                 -- RPG system being used (e.g., D&D 5e, Pathfinder, Scrabble, etc) 
-    visibility VARCHAR(20) DEFAULT 'private',                 -- Access level: private (owner only), invite (with code), or public
-    invite_code VARCHAR(100) UNIQUE,                          -- Unique code players use to join invite-only campaigns
-    is_active BOOLEAN DEFAULT TRUE,                           -- True if campaign is ongoing, false if archived/completed
-
-    -- Campaign Data  
-    world_name VARCHAR(250),                                  -- Name of the campaign's world/setting
-    setting VARCHAR(250),                                     -- Genre/theme (e.g., medieval fantasy, sci-fi)
-    tone VARCHAR(100),                                        -- Campaign tone (e.g., dark, comedic, serious)
-    difficulty_level VARCHAR(50),                             -- Difficulty setting (e.g., easy, hard, deadly)
-
-    -- Timestamps
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,         -- Timestamp when campaign was created, auto-set on insert
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,         -- Timestamp of last campaign update, should update on changes
-    archived_at TIMESTAMPTZ,                                  -- Timestamp when campaign was archived, null if active
-
-    -- Constraints
-    CONSTRAINT fk_campaigns_gm                                -- Foreign key constraint to ensure valid GM reference
-        FOREIGN KEY (gm_user_id)                              -- Links to Users table
-        REFERENCES Users(id)                                  -- Must reference an existing user
-        ON DELETE CASCADE                                     -- Delete campaign if GM user is deleted
-);
-
-
-
-
-
-
-
--- TABLE: CampaignMembers
--- PRIMARY KEY: id
--- FOREIGN KEYS: campaign_id for Campaigns(id), user_id for Users(id)
--- PURPOSE: Junction table linking Users ↔ Campaigns.
--- A user can be in many campaigns, and a campaign can have many users.
-CREATE TABLE CampaignMembers (
-
-    id SERIAL PRIMARY KEY,                                    -- Auto-incrementing integer, uniquely identifies each membership
-
-    -- foreign Keys 
-    campaign_id INT NOT NULL,                                 -- Foreign key to Campaigns, identifies which campaign
-    user_id INT NOT NULL,                                     -- Foreign key to Users, identifies which user is a member
-
-    -- Campaign Member details 
-    role VARCHAR(50) DEFAULT 'player',                        -- Member's role: player (default), co_gm (assistant GM), or observer
-    joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,          -- Timestamp when user joined the campaign, auto-set on insert
-    is_active BOOLEAN DEFAULT TRUE,                           -- True if membership is active, false if user left/removed
-
-    -- Constraints
-    CONSTRAINT fk_campaign_members_campaign                   -- Foreign key constraint to ensure valid campaign reference
-        FOREIGN KEY (campaign_id)                             -- Links to Campaigns table
-        REFERENCES Campaigns(id)                              -- Must reference an existing campaign
-        ON DELETE CASCADE,                                    -- Delete membership if campaign is deleted
-
-    CONSTRAINT fk_campaign_members_user                       -- Foreign key constraint to ensure valid user reference
-        FOREIGN KEY (user_id)                                 -- Links to Users table
-        REFERENCES Users(id)                                  -- Must reference an existing user
-        ON DELETE CASCADE,                                    -- Delete membership if user is deleted
-
-    CONSTRAINT uq_campaign_members UNIQUE (campaign_id, user_id) -- Composite unique constraint: user can only join campaign once to prevent duplicate memberships
-);
-
-
-
-
--- TABLE: Sessions
--- PRIMARY KEY: id
--- FOREIGN KEYS: user_id for Users(id), campaign_id for Campaigns(id)
--- PURPOSE: Represents individual play sessions within a campaign.
-CREATE TABLE Sessions (
-
-    id SERIAL PRIMARY KEY,                                    -- Auto-incrementing integer, uniquely identifies each session
-
-    -- Foreign Keys
-    user_id INT NOT NULL,                                     -- Foreign key to Users, identifies session creator/owner
-    campaign_id INT NOT NULL,                                 -- Foreign key to Campaigns, identifies parent campaign
-    session_token VARCHAR(255) UNIQUE NOT NULL,               -- Unique secure token for joining/authenticating to session
-
-    session_number INT NOT NULL,                              -- Sequential number of session within campaign (1, 2, 3...)
-    session_title VARCHAR(250),                               -- descriptive title for the session
-    session_notes TEXT,                                       -- GM notes, session recap, or summary
-
-    scheduled_at TIMESTAMPTZ,                                 -- Timestamp when session is scheduled to occur
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,         -- Timestamp when session record was created, auto-set on insert
-    is_valid BOOLEAN DEFAULT TRUE,                            -- True if session is valid/active, false if cancelled/invalidated
-
-    -- Constraints
-    CONSTRAINT fk_sessions_user                               -- Foreign key constraint to ensure valid user reference
-        FOREIGN KEY (user_id)                                 -- Links to Users table
-        REFERENCES Users(id)                                  -- Must reference an existing user
-        ON DELETE CASCADE,                                    -- Delete session if user is deleted
-
-    CONSTRAINT fk_sessions_campaign                           -- Foreign key constraint to ensure valid campaign reference
-        FOREIGN KEY (campaign_id)                             -- Links to Campaigns table
-        REFERENCES Campaigns(id)                              -- Must reference an existing campaign
-        ON DELETE CASCADE                                     -- Delete session if parent campaign is deleted
-);
-
-
-
-
-
 -- TABLE: Dashboards
 -- PRIMARY KEY: id
--- FOREIGN KEYS: owner_id for Users(id), campaign_id for Campaigns(id), copied_from_id for Dashboards(id)
--- PURPOSE: Stores dashboards created by users inside campaigns. Stores dashboard details in JSON. 
+-- FOREIGN KEYS: owner_id for Users(id), copied_from_id for Dashboards(id)
+-- PURPOSE: Stores dashboards created by users. Stores dashboard details in JSON. 
 CREATE TABLE Dashboards (
 
     id SERIAL PRIMARY KEY,                                    -- Auto-incrementing integer, uniquely identifies each dashboard
 
     -- foreign Keys 
     owner_id INT NOT NULL,                                    -- Foreign key to Users, identifies dashboard creator/owner
-    campaign_id INT NOT NULL,                                 -- Foreign key to Campaigns, identifies campaign context
     copied_from_id INT,                                       -- Foreign key to Dashboards, references original if this is a copy
 
     -- Dashboard Overview
@@ -206,11 +86,6 @@ CREATE TABLE Dashboards (
         REFERENCES Users(id)                                  -- Must reference an existing user
         ON DELETE CASCADE,                                    -- Delete dashboard if owner is deleted
 
-    CONSTRAINT fk_dashboards_campaign                         -- Foreign key constraint to ensure valid campaign reference
-        FOREIGN KEY (campaign_id)                             -- Links to Campaigns table
-        REFERENCES Campaigns(id)                              -- Must reference an existing campaign
-        ON DELETE CASCADE,                                    -- Delete dashboard if campaign is deleted
-
     CONSTRAINT fk_dashboards_copied_from                      -- Foreign key constraint to track dashboard lineage
         FOREIGN KEY (copied_from_id)                          -- Links to Dashboards table (self-reference)
         REFERENCES Dashboards(id)                             -- Must reference an existing dashboard
@@ -221,12 +96,10 @@ CREATE TABLE Dashboards (
 
 
 
-
-
 -- TABLE: Tags
 -- PRIMARY KEY: id
 -- FOREIGN KEYS: none
--- PURPOSE: Simple lookup table for categorizing dashboards.
+-- PURPOSE: Simple table for categorizing dashboards.
 CREATE TABLE Tags (
 
     id SERIAL PRIMARY KEY,                                    -- Auto-incrementing integer, uniquely identifies each tag
@@ -251,7 +124,7 @@ CREATE TABLE DashboardTags (
    
    -- Foreign Keys 
    dashboard_id INT NOT NULL,                                -- Foreign key to Dashboards, identifies which dashboard
-    tag_id INT NOT NULL,                                      -- Foreign key to Tags, identifies which tag is applied
+   tag_id INT NOT NULL,                                      -- Foreign key to Tags, identifies which tag is applied
    
    -- Timestamps
    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,         -- Timestamp when tag was applied to dashboard, auto-set on insert
@@ -341,5 +214,348 @@ CREATE TABLE Subscriptions (
 
 
 
+-- TABLE: Reports
+-- PRIMARY KEY: id
+-- FOREIGN KEYS: reporter_user_id → Users(id), dashboard_id → Dashboards(id), 
+--               reviewed_by_user_id → Users(id)
+-- PURPOSE: Tracks user reports of inappropriate/violating dashboards for moderation
+CREATE TABLE Reports (
+    
+    id SERIAL PRIMARY KEY,                                    -- Auto-incrementing integer, uniquely identifies each report
+    
+    -- Foreign Keys
+    reporter_user_id INT NOT NULL,                            -- Foreign key to Users, identifies who filed the report
+    dashboard_id INT NOT NULL,                                -- Foreign key to Dashboards, identifies what was reported
+    reviewed_by_user_id INT,                                  -- Foreign key to Users, identifies admin who reviewed (nullable)
+    
+    -- Report Details
+    report_reason VARCHAR(50) NOT NULL,                       -- Category: spam, inappropriate, copyright, other
+    report_description TEXT,                                  -- Detailed explanation from reporter
+    
+    -- Review Status
+    status VARCHAR(20) DEFAULT 'pending',                     -- Status: pending, reviewing, resolved, dismissed
+    admin_notes TEXT,                                         -- Internal notes from moderator/admin
+    
+    -- Timestamps
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,         -- When report was filed
+    reviewed_at TIMESTAMPTZ,                                  -- When admin reviewed the report (nullable)
+    resolved_at TIMESTAMPTZ,                                  -- When report was resolved/closed (nullable)
+    
+    -- Constraints
+    CONSTRAINT fk_reports_reporter                          -- Delete report if reporter is deleted
+        FOREIGN KEY (reporter_user_id)                      -- 
+        REFERENCES Users(id)                                -- 
+        ON DELETE CASCADE,                                  -- 
+        
+    CONSTRAINT fk_reports_dashboard                         -- Delete report if dashboard is deleted
+        FOREIGN KEY (dashboard_id)                          -- 
+        REFERENCES Dashboards(id)                           --
+        ON DELETE CASCADE,                                  -- 
+        
+    CONSTRAINT fk_reports_reviewer                         -- Set to NULL if reviewer account deleted
+        FOREIGN KEY (reviewed_by_user_id)                  -- 
+        REFERENCES Users(id)                               -- 
+        ON DELETE SET NULL                                 -- 
+);
 
 
+
+
+
+-- Indexes
+
+-- Users table indexes
+CREATE INDEX idx_users_username ON Users(username);              -- B-tree index on username
+CREATE INDEX idx_users_email ON Users(email);                    -- Fast email lookups during login
+CREATE INDEX idx_users_is_active ON Users(is_active);            -- Filter active/inactive users
+CREATE INDEX idx_users_created_at ON Users(created_at);          -- Sort users by registration date
+
+-- Dashboards table indexes
+CREATE INDEX idx_dashboards_owner_id ON Dashboards(owner_id);                  -- Get user's dashboards
+CREATE INDEX idx_dashboards_visibility ON Dashboards(visibility);              -- Filter by visibility
+CREATE INDEX idx_dashboards_is_shared ON Dashboards(is_shared);                -- Find shared dashboards
+CREATE INDEX idx_dashboards_created_at ON Dashboards(created_at);              -- Sort by date
+CREATE INDEX idx_dashboards_vote_count ON Dashboards(vote_count DESC);         -- Sort by popularity
+
+
+-- DashboardTags table indexes
+CREATE INDEX idx_dashboard_tags_dashboard_id ON DashboardTags(dashboard_id);   -- Get tags for dashboard
+CREATE INDEX idx_dashboard_tags_tag_id ON DashboardTags(tag_id);               -- Get dashboards with tag
+
+-- Votes table indexes
+CREATE INDEX idx_votes_user_id ON Votes(user_id);                              -- Get user's votes
+CREATE INDEX idx_votes_dashboard_id ON Votes(dashboard_id);                    -- Get votes for dashboard
+
+-- Subscriptions table indexes
+CREATE INDEX idx_subscriptions_user_id ON Subscriptions(user_id);              -- Get user's subscriptions
+CREATE INDEX idx_subscriptions_dashboard_id ON Subscriptions(dashboard_id);    -- Get subscribers of dashboard
+
+-- Reports table indexes
+CREATE INDEX idx_reports_status ON Reports(status);                      -- Filter by status
+CREATE INDEX idx_reports_dashboard_id ON Reports(dashboard_id);          -- Get reports for dashboard
+CREATE INDEX idx_reports_reporter_id ON Reports(reporter_user_id);       -- Get reports by user
+CREATE INDEX idx_reports_created_at ON Reports(created_at DESC);         -- Sort by date
+
+
+-- TRIGGERS AND FUNCTIONS
+
+-- FUNCTION: update_updated_at_column
+-- TABLE: Users, Dashboards
+-- TRIGGER TIME: BEFORE UPDATE
+-- TRIGGER EVENT: UPDATE
+-- DESCRIPTION: Automatically updates the updated_at column to the current timestamp
+--              whenever a row is modified in Users, or Dashboards tables.
+--              This ensures accurate tracking of last modification time without
+--              requiring manual updates in application code.
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- NAME: update_users_updated_at
+-- TABLE: Users
+-- TRIGGER TIME: BEFORE UPDATE
+-- TRIGGER EVENT: UPDATE
+-- DESCRIPTION: Triggers the update_updated_at_column function before any UPDATE on Users table.
+--              Ensures updated_at timestamp is always current when user data is modified.
+CREATE TRIGGER update_users_updated_at 
+    BEFORE UPDATE ON Users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+
+
+-- NAME: update_dashboards_updated_at
+-- TABLE: Dashboards
+-- TRIGGER TIME: BEFORE UPDATE
+-- TRIGGER EVENT: UPDATE
+-- DESCRIPTION: Triggers the update_updated_at_column function before any UPDATE on Dashboards table.
+--              Ensures updated_at timestamp is always current when dashboard data is modified.
+CREATE TRIGGER update_dashboards_updated_at 
+    BEFORE UPDATE ON Dashboards
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+
+
+-- VOTE COUNT FUNCTIONS
+
+-- FUNCTION: increment_dashboard_vote_count
+-- TABLE: Votes, Dashboards
+-- TRIGGER TIME: AFTER INSERT
+-- TRIGGER EVENT: INSERT
+-- DESCRIPTION: Increments the vote_count in Dashboards table when a new vote is added to Votes table.
+--              This denormalized counter enables fast sorting/filtering by popularity without
+--              requiring expensive COUNT(*) queries on every page load.
+CREATE OR REPLACE FUNCTION increment_dashboard_vote_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE Dashboards 
+    SET vote_count = vote_count + 1 
+    WHERE id = NEW.dashboard_id;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- FUNCTION: decrement_dashboard_vote_count
+-- TABLE: Votes, Dashboards
+-- TRIGGER TIME: AFTER DELETE
+-- TRIGGER EVENT: DELETE
+-- DESCRIPTION: Decrements the vote_count in Dashboards table when a vote is removed from Votes table.
+--              Maintains accurate vote count when users remove their votes or when votes are deleted.
+CREATE OR REPLACE FUNCTION decrement_dashboard_vote_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE Dashboards 
+    SET vote_count = vote_count - 1 
+    WHERE id = OLD.dashboard_id;
+    RETURN OLD;
+END;
+$$ language 'plpgsql';
+
+-- NAME: trigger_increment_vote_count
+-- TABLE: Votes
+-- TRIGGER TIME: AFTER INSERT
+-- TRIGGER EVENT: INSERT
+-- DESCRIPTION: Triggers the increment_dashboard_vote_count function after a new vote is inserted.
+--              Automatically updates the denormalized vote_count in Dashboards table.
+CREATE TRIGGER trigger_increment_vote_count
+    AFTER INSERT ON Votes
+    FOR EACH ROW
+    EXECUTE FUNCTION increment_dashboard_vote_count();
+
+-- NAME: trigger_decrement_vote_count
+-- TABLE: Votes
+-- TRIGGER TIME: AFTER DELETE
+-- TRIGGER EVENT: DELETE
+-- DESCRIPTION: Triggers the decrement_dashboard_vote_count function after a vote is deleted.
+--              Automatically decreases the denormalized vote_count in Dashboards table.
+CREATE TRIGGER trigger_decrement_vote_count
+    AFTER DELETE ON Votes
+    FOR EACH ROW
+    EXECUTE FUNCTION decrement_dashboard_vote_count();
+
+
+-- SUBSCRIPTION COUNT FUNCTIONS
+
+-- FUNCTION: increment_dashboard_subscription_count
+-- TABLE: Subscriptions, Dashboards
+-- TRIGGER TIME: AFTER INSERT
+-- TRIGGER EVENT: INSERT
+-- DESCRIPTION: Increments the subscription_count in Dashboards table when a new subscription is added.
+--              This denormalized counter enables fast sorting/filtering by subscriber popularity
+--              without requiring expensive COUNT(*) queries.
+CREATE OR REPLACE FUNCTION increment_dashboard_subscription_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE Dashboards 
+    SET subscription_count = subscription_count + 1 
+    WHERE id = NEW.dashboard_id;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- FUNCTION: decrement_dashboard_subscription_count
+-- TABLE: Subscriptions, Dashboards
+-- TRIGGER TIME: AFTER DELETE
+-- TRIGGER EVENT: DELETE
+-- DESCRIPTION: Decrements the subscription_count in Dashboards table when a subscription is removed.
+--              Maintains accurate subscription count when users unsubscribe or subscriptions are deleted.
+CREATE OR REPLACE FUNCTION decrement_dashboard_subscription_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE Dashboards 
+    SET subscription_count = subscription_count - 1 
+    WHERE id = OLD.dashboard_id;
+    RETURN OLD;
+END;
+$$ language 'plpgsql';
+
+-- NAME: trigger_increment_subscription_count
+-- TABLE: Subscriptions
+-- TRIGGER TIME: AFTER INSERT
+-- TRIGGER EVENT: INSERT
+-- DESCRIPTION: Triggers the increment_dashboard_subscription_count function after a new subscription.
+--              Automatically updates the denormalized subscription_count in Dashboards table.
+CREATE TRIGGER trigger_increment_subscription_count
+    AFTER INSERT ON Subscriptions
+    FOR EACH ROW
+    EXECUTE FUNCTION increment_dashboard_subscription_count();
+
+-- NAME: trigger_decrement_subscription_count
+-- TABLE: Subscriptions
+-- TRIGGER TIME: AFTER DELETE
+-- TRIGGER EVENT: DELETE
+-- DESCRIPTION: Triggers the decrement_dashboard_subscription_count function after unsubscribe.
+--              Automatically decreases the denormalized subscription_count in Dashboards table.
+CREATE TRIGGER trigger_decrement_subscription_count
+    AFTER DELETE ON Subscriptions
+    FOR EACH ROW
+    EXECUTE FUNCTION decrement_dashboard_subscription_count();
+
+
+-- USER DASHBOARD COUNT FUNCTIONS
+
+-- FUNCTION: increment_user_dashboard_count
+-- TABLE: Dashboards, Users
+-- TRIGGER TIME: AFTER INSERT
+-- TRIGGER EVENT: INSERT
+-- DESCRIPTION: Increments the dashboard_count in Users table when a new dashboard is created.
+--              This denormalized counter tracks how many dashboards each user owns for
+--              quota enforcement and analytics without expensive COUNT(*) queries.
+CREATE OR REPLACE FUNCTION increment_user_dashboard_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE Users 
+    SET dashboard_count = dashboard_count + 1 
+    WHERE id = NEW.owner_id;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- FUNCTION: decrement_user_dashboard_count
+-- TABLE: Dashboards, Users
+-- TRIGGER TIME: AFTER DELETE
+-- TRIGGER EVENT: DELETE
+-- DESCRIPTION: Decrements the dashboard_count in Users table when a dashboard is deleted.
+--              Maintains accurate count when users delete their dashboards.
+CREATE OR REPLACE FUNCTION decrement_user_dashboard_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE Users 
+    SET dashboard_count = dashboard_count - 1 
+    WHERE id = OLD.owner_id;
+    RETURN OLD;
+END;
+$$ language 'plpgsql';
+
+-- NAME: trigger_increment_dashboard_count
+-- TABLE: Dashboards
+-- TRIGGER TIME: AFTER INSERT
+-- TRIGGER EVENT: INSERT
+-- DESCRIPTION: Triggers the increment_user_dashboard_count function after a dashboard is created.
+--              Automatically updates the denormalized dashboard_count in Users table.
+CREATE TRIGGER trigger_increment_dashboard_count
+    AFTER INSERT ON Dashboards
+    FOR EACH ROW
+    EXECUTE FUNCTION increment_user_dashboard_count();
+
+-- NAME: trigger_decrement_dashboard_count
+-- TABLE: Dashboards
+-- TRIGGER TIME: AFTER DELETE
+-- TRIGGER EVENT: DELETE
+-- DESCRIPTION: Triggers the decrement_user_dashboard_count function after a dashboard is deleted.
+--              Automatically decreases the denormalized dashboard_count in Users table.
+CREATE TRIGGER trigger_decrement_dashboard_count
+    AFTER DELETE ON Dashboards
+    FOR EACH ROW
+    EXECUTE FUNCTION decrement_user_dashboard_count();
+
+
+
+-- DASHBOARD LIMIT ENFORCEMENT
+
+-- FUNCTION: check_dashboard_limit
+-- TABLE: Dashboards, Users
+-- TRIGGER TIME: BEFORE INSERT
+-- TRIGGER EVENT: INSERT
+-- DESCRIPTION: Validates that user has not exceeded their dashboard_limit before allowing creation.
+--              Queries the Users table to get user's current dashboard_count and dashboard_limit,
+--              then raises an exception if the limit has been reached. This prevents users from
+--              creating more dashboards than their plan allows.
+CREATE OR REPLACE FUNCTION check_dashboard_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+    user_limit INT;
+    user_count INT;
+BEGIN
+    -- Get user's limit and current count
+    SELECT dashboard_limit, dashboard_count 
+    INTO user_limit, user_count
+    FROM Users 
+    WHERE id = NEW.owner_id;
+    
+    -- Check if user has reached limit
+    IF user_count >= user_limit THEN
+        RAISE EXCEPTION 'Dashboard limit reached. Maximum allowed: %', user_limit;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- NAME: trigger_check_dashboard_limit
+-- TABLE: Dashboards
+-- TRIGGER TIME: BEFORE INSERT
+-- TRIGGER EVENT: INSERT
+-- DESCRIPTION: Triggers the check_dashboard_limit function before inserting a new dashboard.
+--              Prevents users from creating more dashboards than allowed by their plan/settings
+--              by checking dashboard_count against dashboard_limit in Users table.
+--              Raises an exception and aborts the INSERT if limit is reached.
+CREATE TRIGGER trigger_check_dashboard_limit
+    BEFORE INSERT ON Dashboards
+    FOR EACH ROW
+    EXECUTE FUNCTION check_dashboard_limit();
