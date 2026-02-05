@@ -13,7 +13,7 @@ export default function Home() {
     <div className="app-layout">
       <Sidebar />
       <div className="main-content">
-        <Dashboard />
+        <Dashboard activePage={activePage} />
         <Notes />
         <PageTabs activePage={activePage} setActivePage={setActivePage} />
       </div>
