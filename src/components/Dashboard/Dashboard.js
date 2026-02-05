@@ -2,6 +2,7 @@
 
 import React from "react";
 import ReactGridLayout from "react-grid-layout";
+import './Dashboard.css'
 
 export default class Dashboard extends React.PureComponent {
   static defaultProps = {
