@@ -6,8 +6,8 @@ import './Dashboard.css'
 
 export default class Dashboard extends React.PureComponent {
     static defaultProps = {
-        cols: 12,
-        rowHeight: 100,
+        cols: 24,
+        rowHeight: 50,
         isDraggable: true,
         isResizable: true,
         width: 2000,
@@ -42,13 +42,16 @@ export default class Dashboard extends React.PureComponent {
 
     const newId = "n" + counterCopy[pageIndex];
 
+    const perRow = 7;
+    const index = itemsCopy[pageIndex].length;
+
     const newItem = {
-        i: newId,
-        x: (itemsCopy[pageIndex].length * 2) % this.props.cols,
-        y: Infinity,
-        w: 1,
-        h: 1,
-        moduleId: moduleId
+    i: newId,
+    x: (index % perRow),
+    y: Math.floor(index / perRow),
+    w: 1,
+    h: 1,
+    moduleId: moduleId
     };
 
     itemsCopy[pageIndex] = itemsCopy[pageIndex].concat(newItem);
