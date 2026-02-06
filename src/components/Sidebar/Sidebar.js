@@ -1,5 +1,6 @@
 "use client";
 
+import "./Sidebar.css"
 import ModuleItem from "./ModuleItem";
 
 export default function Sidebar() {

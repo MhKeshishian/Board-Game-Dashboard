@@ -13,14 +13,6 @@ html, body {
   gap: 5px;
 }
 
-.sidebar {
-  background-color: lightgray;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  width: fit-content;
-}
-
 .main-content {
   display: flex;
   flex-direction: column;

@@ -1,0 +1,7 @@
+.sidebar {
+  background-color: lightgray;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+}
