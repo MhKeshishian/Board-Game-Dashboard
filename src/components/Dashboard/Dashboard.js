@@ -79,8 +79,12 @@ export default class Dashboard extends React.PureComponent {
 
         return items.map((el) =>
             <div key={el.i} data-grid={el} className="dash-module">
-            <button className="dash-remove" onClick={() => this.onRemoveItem(el.i)}>x</button>
-            <div className="dash-name">{el.moduleId}</div>
+                <button className="dash-gear" type="button" onClick={() => alert("Config clicked. Backend logic goes here.")}>
+                    <img src="/icons/gear.svg" alt="config" />
+                </button>
+                <button className="dash-remove" onClick={() => this.onRemoveItem(el.i)}>x</button>
+
+                <div className="dash-name">{el.moduleId}</div>
             </div>
         );
     }

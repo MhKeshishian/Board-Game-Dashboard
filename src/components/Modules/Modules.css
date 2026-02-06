@@ -1,0 +1,57 @@
+.dash-module {
+  background-color: white;
+  border: 1px solid #999;
+  position: relative;
+}
+
+.dash-remove {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dash-gear {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dash-gear img {
+  width: 16px;
+  height: 16px;
+}
+
+.dash-name {
+  padding: 10px;
+  text-align: center;
+}
+
+.module-item {
+  padding: 8px;
+  margin-bottom: 8px;
+  user-select: none;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+}
+
+.module-item:active {
+  cursor: grabbing;
+}
+
+.module-icon {
+  width: 28px;
+  height: 28px;
+  margin-right: 10px;
+}
+
+.module-label {
+  color: #333;
+}

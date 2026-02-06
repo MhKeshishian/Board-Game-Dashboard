@@ -1,85 +1,35 @@
 html, body {
-    height: 100%;
-    margin: 0;
+  height: 100%;
+  margin: 0;
 }
 
 .app-wrapper {
-    height: calc(100vh - 60px);
+  height: calc(100vh - 60px);
 }
 
 .app-layout {
-    display: flex;
-    height: 100%;
-    gap: 5px;
+  display: flex;
+  height: 100%;
+  gap: 5px;
 }
 
 .sidebar {
-    background-color: lightgray;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    width: fit-content;
+  background-color: lightgray;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
 }
 
 .main-content {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    flex: 1;
-}
-
-/* .app-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   flex: 1;
-  background-color: lightgreen;
-  padding: 16px;
-  overflow: auto;
-} */
-
-.dash-module {
-    background-color: white;
-    border: 1px solid #999;
-    position: relative;
-}
-
-.dash-remove {
-    position: absolute;
-    top: 4px;
-    right: 6px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-}
-
-.dash-name {
-    padding: 10px;
-    text-align: center;
 }
 
 .notes-area {
-    height: 200px;
-    background-color: lightblue;
-    padding: 16px;
-}
-
-.module-item {
-    padding: 8px;
-    margin-bottom: 8px;
-    user-select: none;
-    cursor: grab;
-    display: flex;
-    align-items: center;
-}
-
-.module-item:active {
-    cursor: grabbing;
-}
-
-.module-icon {
-    width: 28px;
-    height: 28px;
-    margin-right: 10px;
-}
-
-.module-label {
-    color: #333;
+  height: 200px;
+  background-color: lightblue;
+  padding: 16px;
 }

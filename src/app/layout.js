@@ -1,6 +1,7 @@
 import "./globals.css";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
+import "@/components/Modules/Modules.css";
 import Navbar from "@/components/Navbar/Navbar";
 
 export default function RootLayout({ children }) {
