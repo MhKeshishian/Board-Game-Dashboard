@@ -1,18 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Righteous&family=Inter:wght@400;500&display=swap');
 
 .hero-section {
-  padding: 120px 20px;
+  padding: 120px 0px;
   background: linear-gradient(to bottom, #8b5cf6, #3b82f6);
+  text-align: left;
 }
 
 .hero-container {
   display: flex;
   max-width: 1200px;
-  margin: 0 auto;
+  padding: 0 60px;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.hero-left{
-    flex: 1;
+.hero-left {
+  text-align: left;
 }
 
 .hero-left h1 {
@@ -20,6 +23,7 @@
   margin: 0;
   color: white;
   font-family: 'Righteous', sans-serif;
+  text-align: left;
 }
 
 .hero-left p {
@@ -43,4 +47,51 @@
 .hero-left button:hover {
   background-color: #7c3aed;
   transform: translateY(-2px);
+}
+
+.hero-right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.notebook-stack {
+  position: relative;
+  width: 220px;
+  height: 160px;
+  margin-top: -50px;
+}
+
+.notebook-page {
+  position: absolute;
+  width: 160px;
+  height: 200px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid #9333ea;
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 27px,
+    #e5e7eb 27px,
+    #e5e7eb 28px
+  );
+}
+
+.page-1 {
+  top: 30px;
+  left: 30px;
+  transform: rotate(-8deg);
+}
+
+.page-2 {
+  top: 15px;
+  left: 60px;
+  transform: rotate(3deg);
+}
+
+.page-3 {
+  top: 0;
+  left: 85px;
+  transform: rotate(10deg);
 }
