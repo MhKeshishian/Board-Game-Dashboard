@@ -5,14 +5,6 @@ import path from "path";
 
 export async function GET() {
 
-    // //Check terminal path
-    // console.log("Current working directory:", process.cwd());
-
-    // // //check if cert file exists
-
-    // // File.existsSync(process.env.CERT_PATH) ||
-    // //     console.error("Certificate file not found at path:", process.env.CERT_PATH);
-
     //Print env variables to verify
     console.log("DB_URL:", process.env.DB_URL);
     console.log("USERNAME:", process.env.DB_USERNAME);
