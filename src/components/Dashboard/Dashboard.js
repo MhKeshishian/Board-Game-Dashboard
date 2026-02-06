@@ -14,84 +14,84 @@ export default class Dashboard extends React.PureComponent {
         activePage: 0
     };
 
-  constructor(props) {
-    super(props);
+    constructor(props) {
+        super(props);
 
-    this.state = {
-        itemsByPage: [[], [], [], [], [], [], []],
-        counterByPage: [0, 0, 0, 0, 0, 0, 0]
-    };
+        this.state = {
+            itemsByPage: [[], [], [], [], [], [], []],
+            counterByPage: [0, 0, 0, 0, 0, 0, 0]
+        };
 
-    this.handleDrop = this.handleDrop.bind(this);
-    this.handleDragOver = this.handleDragOver.bind(this);
-    this.onLayoutChange = this.onLayoutChange.bind(this);
+        this.handleDrop = this.handleDrop.bind(this);
+        this.handleDragOver = this.handleDragOver.bind(this);
+        this.onLayoutChange = this.onLayoutChange.bind(this);
+        }
+
+    handleDragOver(e) {
+        e.preventDefault();
+        }
+
+    handleDrop(e) {
+        e.preventDefault();
+
+        const pageIndex = this.props.activePage;
+        const moduleId = e.dataTransfer.getData("text/plain");
+
+        const itemsCopy = [...this.state.itemsByPage];
+        const counterCopy = [...this.state.counterByPage];
+
+        const newId = "n" + counterCopy[pageIndex];
+
+        const perRow = 7;
+        const index = itemsCopy[pageIndex].length;
+
+        const newItem = {
+        i: newId,
+        x: (index % perRow),
+        y: Math.floor(index / perRow),
+        w: 1,
+        h: 1,
+        moduleId: moduleId
+        };
+
+        itemsCopy[pageIndex] = itemsCopy[pageIndex].concat(newItem);
+        counterCopy[pageIndex] = counterCopy[pageIndex] + 1;
+
+        this.setState({ itemsByPage: itemsCopy, counterByPage: counterCopy });
     }
 
-  handleDragOver(e) {
-    e.preventDefault();
+    onRemoveItem(id) {
+        const pageIndex = this.props.activePage;
+
+        const itemsCopy = [...this.state.itemsByPage];
+        itemsCopy[pageIndex] = itemsCopy[pageIndex].filter((x) => x.i !== id);
+
+        this.setState({ itemsByPage: itemsCopy });
     }
 
-  handleDrop(e) {
-    e.preventDefault();
-
-    const pageIndex = this.props.activePage;
-    const moduleId = e.dataTransfer.getData("text/plain");
-
-    const itemsCopy = [...this.state.itemsByPage];
-    const counterCopy = [...this.state.counterByPage];
-
-    const newId = "n" + counterCopy[pageIndex];
-
-    const perRow = 7;
-    const index = itemsCopy[pageIndex].length;
-
-    const newItem = {
-    i: newId,
-    x: (index % perRow),
-    y: Math.floor(index / perRow),
-    w: 1,
-    h: 1,
-    moduleId: moduleId
-    };
-
-    itemsCopy[pageIndex] = itemsCopy[pageIndex].concat(newItem);
-    counterCopy[pageIndex] = counterCopy[pageIndex] + 1;
-
-    this.setState({ itemsByPage: itemsCopy, counterByPage: counterCopy });
+    onLayoutChange(layout) {
+        this.props.onLayoutChange?.(layout);
     }
 
-  onRemoveItem(id) {
-    const pageIndex = this.props.activePage;
+    generateDOM() {
+        const pageIndex = this.props.activePage;
+        const items = this.state.itemsByPage[pageIndex];
 
-    const itemsCopy = [...this.state.itemsByPage];
-    itemsCopy[pageIndex] = itemsCopy[pageIndex].filter((x) => x.i !== id);
-
-    this.setState({ itemsByPage: itemsCopy });
-    }
-
-  onLayoutChange(layout) {
-    this.props.onLayoutChange?.(layout);
-    }
-
-  generateDOM() {
-    const pageIndex = this.props.activePage;
-    const items = this.state.itemsByPage[pageIndex];
-
-    return items.map((el) =>
-        <div key={el.i} data-grid={el} className="dash-module">
-        <button className="dash-remove" onClick={() => this.onRemoveItem(el.i)}>x</button>
-        <div className="dash-name">{el.moduleId}</div>
-        </div>
+        return items.map((el) =>
+            <div key={el.i} data-grid={el} className="dash-module">
+            <button className="dash-remove" onClick={() => this.onRemoveItem(el.i)}>x</button>
+            <div className="dash-name">{el.moduleId}</div>
+            </div>
         );
     }
 
-  render() {
-    return (
-        <div className="dashboard-area" onDragOver={this.handleDragOver} onDrop={this.handleDrop}>
-        <ReactGridLayout {...this.props} onLayoutChange={this.onLayoutChange}>
-            {this.generateDOM()}
-        </ReactGridLayout>
-        </div>
+    render() {
+        return (
+            <div className="dashboard-area" onDragOver={this.handleDragOver} onDrop={this.handleDrop}>
+            <ReactGridLayout {...this.props} onLayoutChange={this.onLayoutChange}>
+                {this.generateDOM()}
+            </ReactGridLayout>
+            </div>
         );
     }
 }

@@ -1,6 +1,6 @@
 .dashboard-area {
-  flex: 1;
-  background-color: white;
-  padding: 16px;
-  overflow: auto;
+    flex: 1;
+    background-color: white;
+    padding: 16px;
+    overflow: auto;
 }
