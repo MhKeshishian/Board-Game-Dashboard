@@ -14,9 +14,11 @@ html, body {
 }
 
 .sidebar {
-  width: 20%;
   background-color: lightgray;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
 }
 
 .main-content {
