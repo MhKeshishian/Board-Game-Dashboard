@@ -59,14 +59,27 @@ html, body {
   padding: 16px;
 }
 
-.widget-item {
+.module-item {
   background-color: white;
+  border: 1px solid #999;
   padding: 8px;
   margin-bottom: 8px;
   user-select: none;
   cursor: grab;
+  display: flex;
+  align-items: center;
 }
 
-.widget-item:active {
-    cursor: grabbing;
+.module-item:active {
+  cursor: grabbing;
+}
+
+.module-icon {
+  width: 28px;
+  height: 28px;
+  margin-right: 10px;
+}
+
+.module-label {
+  color: #333;
 }
