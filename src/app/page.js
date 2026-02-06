@@ -1,3 +1,9 @@
+import HeroSection from "@/components/LandingPage/HeroSection";
+
 export default function LandingPage() {
-  return <div>Landing page placeholder (Route: /)</div>;
+ return (
+  <main>
+    <HeroSection />
+  </main>
+ );
 }

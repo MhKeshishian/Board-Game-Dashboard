@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Righteous&family=Inter:wght@400;500&display=swap');
+
+.hero-section {
+  padding: 120px 20px;
+  background: linear-gradient(to bottom, #8b5cf6, #3b82f6);
+}
+
+.hero-container {
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hero-left{
+    flex: 1;
+}
+
+.hero-left h1 {
+  font-size: 48px;
+  margin: 0;
+  color: white;
+  font-family: 'Righteous', sans-serif;
+}
+
+.hero-left p {
+  font-size: 20px;
+  margin-top: 10px;
+  color: #e5e7eb;
+  font-family: 'Inter', sans-serif;
+}
+
+.hero-left button {
+  margin-top: 20px;
+  padding: 12px 24px;
+  font-size: 16px;
+  background-color: #9333ea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.hero-left button:hover {
+  background-color: #7c3aed;
+  transform: translateY(-2px);
+}

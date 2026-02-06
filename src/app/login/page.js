@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /* This page is just a generic template for now,
 the intention is to implement Oauth to make our logins secure */
