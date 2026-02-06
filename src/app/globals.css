@@ -1,6 +1,15 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+.app-wrapper {
+  height: calc(100vh - 60px);
+}
+
 .app-layout {
   display: flex;
-  height: 100vh;
+  height: 100%;
   gap: 5px;
 }
 
@@ -11,18 +20,18 @@
 }
 
 .main-content {
-  width: 80%;
   display: flex;
   flex-direction: column;
   gap: 5px;
+  flex: 1;
 }
 
-/*.app-layout {
+/* .app-layout {
   flex: 1;
   background-color: lightgreen;
   padding: 16px;
   overflow: auto;
-}*/
+} */
 
 .dash-widget {
   background-color: white;

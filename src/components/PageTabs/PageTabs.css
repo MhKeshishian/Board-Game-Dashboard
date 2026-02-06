@@ -1,0 +1,32 @@
+.page-tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #333;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.page-tabs-left {
+  display: flex;
+  gap: 10px;
+}
+
+.page-tab {
+  color: white;
+  background-color: transparent;
+  border: 1px solid #555;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.page-tab:hover {
+  background-color: #4CAF50;
+  border-color: #4CAF50;
+}
+
+.page-tab.active {
+  background-color: #4CAF50;
+  border-color: #4CAF50;
+}
