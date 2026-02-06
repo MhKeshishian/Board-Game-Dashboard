@@ -60,8 +60,6 @@ html, body {
 }
 
 .module-item {
-  background-color: white;
-  border: 1px solid #999;
   padding: 8px;
   margin-bottom: 8px;
   user-select: none;
