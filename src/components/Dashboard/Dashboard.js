@@ -1,44 +1,25 @@
 "use client";
 
-import React from "react";
+import { useState } from "react";
 import ReactGridLayout from "react-grid-layout";
-import './Dashboard.css'
+import "./Dashboard.css";
 
-export default class Dashboard extends React.PureComponent {
-    static defaultProps = {
-        cols: 24,
-        rowHeight: 50,
-        isDraggable: true,
-        isResizable: true,
-        width: 2000,
-        activePage: 0
-    };
+export default function Dashboard(props) {
+    const [itemsByPage, setItemsByPage] = useState([[], [], [], [], [], [], []]);
+    const [counterByPage, setCounterByPage] = useState([0, 0, 0, 0, 0, 0, 0]);
 
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            itemsByPage: [[], [], [], [], [], [], []],
-            counterByPage: [0, 0, 0, 0, 0, 0, 0]
-        };
-
-        this.handleDrop = this.handleDrop.bind(this);
-        this.handleDragOver = this.handleDragOver.bind(this);
-        this.onLayoutChange = this.onLayoutChange.bind(this);
-        }
-
-    handleDragOver(e) {
+    function handleDragOver(e) {
         e.preventDefault();
-        }
+    }
 
-    handleDrop(e) {
+    function handleDrop(e) {
         e.preventDefault();
 
-        const pageIndex = this.props.activePage;
+        const pageIndex = props.activePage;
         const moduleId = e.dataTransfer.getData("text/plain");
 
-        const itemsCopy = [...this.state.itemsByPage];
-        const counterCopy = [...this.state.counterByPage];
+        const itemsCopy = [...itemsByPage];
+        const counterCopy = [...counterByPage];
 
         const newId = "n" + counterCopy[pageIndex];
 
@@ -57,45 +38,48 @@ export default class Dashboard extends React.PureComponent {
         itemsCopy[pageIndex] = itemsCopy[pageIndex].concat(newItem);
         counterCopy[pageIndex] = counterCopy[pageIndex] + 1;
 
-        this.setState({ itemsByPage: itemsCopy, counterByPage: counterCopy });
+        setItemsByPage(itemsCopy);
+        setCounterByPage(counterCopy);
     }
 
-    onRemoveItem(id) {
-        const pageIndex = this.props.activePage;
+    function onRemoveItem(id) {
+        const pageIndex = props.activePage;
 
-        const itemsCopy = [...this.state.itemsByPage];
+        const itemsCopy = [...itemsByPage];
         itemsCopy[pageIndex] = itemsCopy[pageIndex].filter((x) => x.i !== id);
 
-        this.setState({ itemsByPage: itemsCopy });
+        setItemsByPage(itemsCopy);
     }
 
-    onLayoutChange(layout) {
-        this.props.onLayoutChange?.(layout);
+    function onLayoutChange(layout) {
+        if (props.onLayoutChange) props.onLayoutChange(layout);
     }
 
-    generateDOM() {
-        const pageIndex = this.props.activePage;
-        const items = this.state.itemsByPage[pageIndex];
+    function generateDOM() {
+        const pageIndex = props.activePage;
+        const items = itemsByPage[pageIndex];
 
         return items.map((el) =>
-            <div key={el.i} data-grid={el} className="module-box">
-                <button className="module-gear" type="button" onClick={() => alert("Config clicked. Backend logic goes here.")}>
-                    <img src="/icons/gear.svg" alt="config" />
-                </button>
-                <button className="module-remove" onClick={() => this.onRemoveItem(el.i)}>x</button>
-
-                <div className="module-name">{el.moduleId}</div>
-            </div>
+        <div key={el.i} data-grid={el} className="module-box">
+            <button className="module-gear" type="button" onClick={() => alert("Config clicked. Backend logic goes here.")}><img src="/icons/gear.svg" /></button>
+            <button className="module-remove" onClick={() => onRemoveItem(el.i)}>x</button>
+            <div className="module-name">{el.moduleId}</div>
+        </div>
         );
     }
 
-    render() {
-        return (
-            <div className="dashboard-area" onDragOver={this.handleDragOver} onDrop={this.handleDrop}>
-            <ReactGridLayout {...this.props} onLayoutChange={this.onLayoutChange}>
-                {this.generateDOM()}
-            </ReactGridLayout>
-            </div>
-        );
-    }
+    return (
+        <div className="dashboard-area" onDragOver={handleDragOver} onDrop={handleDrop}>
+        <ReactGridLayout
+            cols={24}
+            rowHeight={50}
+            isDraggable={true}
+            isResizable={true}
+            width={2000}
+            onLayoutChange={onLayoutChange}
+        >
+            {generateDOM()}
+        </ReactGridLayout>
+        </div>
+    );
 }
